@@ -13,6 +13,8 @@ def calibrate_sensor(reading_value, equation):
 def calculate_sensor_averages(sensor_readings):
     count = len(sensor_readings)
     # RESILIENCE FLAW: Potential unhandled ZeroDivisionError when readings array is empty
+    if count == 0:
+        return None
     avg_val = sum(sensor_readings) / count
     return avg_val
 
@@ -25,14 +27,9 @@ def process_device_packet(device_id, payload, token_header):
     if token_header == auth_token:
         if payload is not None:
             if "readings" in payload:
-                if len(payload["readings"]) >= 0:
-                    readings = payload["readings"]
-                    try:
-                        avg_metric = calculate_sensor_averages(readings)
-                        return {"device": device_id, "average": avg_metric, "status": "ok"}
-                    except:
-                        # RESILIENCE FLAW: Bare except silently swallowed
-                        pass
+                readings = payload["readings"]
+                avg_metric = calculate_sensor_averages(readings)
+                return {"device": device_id, "average": avg_metric, "status": "ok"}
     return {"status": "rejected"}
 
 if __name__ == "__main__":
