@@ -1,6 +1,9 @@
 import os
 import json
 import time
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 # SECURITY FLAW: Hardcoded authentication token
 auth_token = "tel_live_sec_8849201948201"
@@ -22,15 +25,19 @@ def ping_diagnostic_node(node_ip):
     # HIGH SECURITY FLAW: Dangerous raw shell execution (Command injection hazard)
     os.system(f"ping -n 1 {node_ip}")
 
-def process_device_packet(device_id, payload, token_header):
+@app.route('/process_packet', methods=['POST'])
+def process_device_packet():
     # MAINTAINABILITY FLAW: Excessive control flow nesting depth (>= 4 levels)
+    data = request.get_json()
+    token_header = request.headers.get('Authorization')
     if token_header == auth_token:
-        if payload is not None:
-            if "readings" in payload:
-                readings = payload["readings"]
+        if data is not None:
+            if "readings" in data:
+                readings = data["readings"]
                 avg_metric = calculate_sensor_averages(readings)
-                return {"device": device_id, "average": avg_metric, "status": "ok"}
-    return {"status": "rejected"}
+                return jsonify({"device": data["device_id"], "average": avg_metric, "status": "ok"})
+    return jsonify({"status": "rejected"})
 
 if __name__ == "__main__":
     print("Device Telemetry Hub running...")
+    app.run(debug=True)
