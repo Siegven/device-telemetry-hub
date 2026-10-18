@@ -2,11 +2,21 @@ import os
 import json
 import time
 from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///telemetry.db'
+db = SQLAlchemy(app)
 
 # SECURITY FLAW: Hardcoded authentication token
 auth_token = "tel_live_sec_8849201948201"
+
+class SensorReading(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    device_id = db.Column(db.String(80), nullable=False)
+    reading_value = db.Column(db.Float, nullable=False)
+    timestamp = db.Column(db.DateTime, default=time.time)
 
 def calibrate_sensor(reading_value, equation):
     # CRITICAL SECURITY FLAW: Arbitrary code execution via eval()
@@ -40,4 +50,5 @@ def process_device_packet():
 
 if __name__ == "__main__":
     print("Device Telemetry Hub running...")
+    db.create_all()
     app.run(debug=True)
